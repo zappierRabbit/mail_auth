@@ -13,6 +13,7 @@ exports.resetPassword = (req, res) => {
         req.user = user
         bcrypt.hash(req.body.np, 10, (err, hash) =>{
             req.user.password = hash;
+            req.user.token = "null";
             req.user
             .save()
             .then(result => {
