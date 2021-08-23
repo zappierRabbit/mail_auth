@@ -30,9 +30,9 @@ exports.resetPassword = (req, res) => {
         )
         }
     )
-    .catch(
-        err =>{
-            console.log(err);
-        }
-    )
+    .catch(err =>{
+        res.json({
+            message: "error"
+        })
+    })
 }
