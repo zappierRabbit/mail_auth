@@ -11,6 +11,7 @@ app.get("/", (req, res)=>{
     res.send("Enter details");
 });
 app.use('/user', userRoutes);
+app.use('/uploads', express.static('uploads'));
 
 
 app.listen(port, (req, res)=>{

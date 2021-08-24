@@ -1,8 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 const validator = require('validator');
+const multer = require('multer');
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + file.originalname);
+    }
+});
+const fileFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'){
+        cb(null, true);
+    }else{
+        cb(null, false);
+    }
+};
+const upload = multer({
+    storage: storage, 
+    limits: {
+        fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
+    });
+
 
 
 const User = require('../models/userSchema');
@@ -48,7 +71,7 @@ router.post('/login', (req, res, next)=>{
 
     User.find({email: req.body.email})
         .exec()
-        .then(user =>{
+        .then(user => {
             if(user.length < 1){
                 return res.status(401).json({
                     message : "Auth failed"
@@ -67,9 +90,24 @@ router.post('/login', (req, res, next)=>{
 }, userControllerLogin)
 
 router.get('/api/users', checkAuth, (req, res) => {
-    res.json({
-        message : "users Fetched"
-    })
+    User.findOne ({email: req.userData.email})
+    .then(
+        user =>{
+            req.user=user
+            res.json({
+                name: req.user.name,
+                email: req.user.email,
+                phone: req.user.phone,
+                address: req.user.address
+            })
+        }
+    )
+    .catch(
+        err =>{
+            console.log(err);
+        }
+    )
+
 })
 
 router.post('/updatePassword', checkAuth, (req, res, next) => {
@@ -90,23 +128,44 @@ router.post('/updatePassword', checkAuth, (req, res, next) => {
 
 router.post('/resetRequest', resetRequest);
 router.post('/resetPassword', resetPassword);
+router.post('/upload', checkAuth, upload.single('displayPic'), (req, res) => {
+    User.findOne ({email: req.userData.email})
+    .then(
+        user =>{
+            user.displayPic = req.file.path;
+            user.save()
+            res.json({
+                message: "image uploaded"
+            })
+        }
+    )
+    .catch(
+        err =>{
+            console.log(err);
+        }
+    )
+});
+
+router.get('/show', checkAuth, (req, res) => {
+    User.findOne ({email: req.userData.email})
+    .then(
+        user =>{
+            req.user=user
+            res.json({
+                didplayPic: req.user.displayPic
+            })
+        }
+    )
+    .catch(
+        err =>{
+            console.log(err);
+        }
+    )
+})
 
 
 
 
-// router.delete('./:userId', (req, res, next)=>{
-//     User.remove({_id: req.params.id})
-//         .exec()
-//         .then(res => {
-//             res.status(200).json({
-//                 message: "user deleted"
-//             });
-//         })
-//         .catch(err => {
-//             return res.status(500).json({
-//                 error: err
-//             });
-//         });
-// });
+
 
 module.exports = router;
